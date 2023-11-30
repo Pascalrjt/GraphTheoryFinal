@@ -1,5 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import datetime
 
 class Graph:
     def __init__(self):
@@ -34,6 +35,7 @@ def visualize_schedule(schedule, input_data):
 
     for class_name, color in schedule.items():
         G.add_node(class_name, color=color)
+        print(f"{class_name}: Color {color}")
 
     for class_name, students in input_data.items():
         for student in students:
@@ -47,28 +49,52 @@ def visualize_schedule(schedule, input_data):
     nx.draw(G, pos, with_labels=True, node_color=node_colors, cmap=plt.cm.rainbow)
     plt.show()
 
+class ScheduleAllocator:
+    def __init__(self, schedule, class_duration=3, start_time=datetime.time(11, 0), end_time=datetime.time(16, 0)):
+        self.schedule = schedule
+        self.class_duration = class_duration
+        self.start_time = start_time
+        self.end_time = end_time
+        self.num_periods = 0  # Add a new attribute to store the number of periods
 
-def get_user_input():
-    input_data = {}
-    num_courses = int(input("Enter the number of courses: "))
-    
-    for _ in range(num_courses):
-        course = input("Enter course name: ")
-        students = input("Enter students (comma-separated): ").split(',')
-        input_data[course] = [student.strip() for student in students]
-    
-    return input_data
+    def allocate_schedule(self):
+        allocated_schedule = {}
+        current_time = datetime.datetime.combine(datetime.date.today(), self.start_time)
+
+        for class_name, color in self.schedule.items():
+            allocated_schedule[class_name] = current_time.strftime("%I:%M %p")
+            current_time += datetime.timedelta(hours=self.class_duration)
+            if current_time.time() > self.end_time:
+                current_time = datetime.datetime.combine(datetime.date.today(), self.start_time)
+                self.num_periods += 1  # Increment the number of periods
+
+        return allocated_schedule, self.num_periods  # Return the allocated schedule and the number of periods
 
 
-# Get user input for courses and students
-user_input_data = get_user_input()
+# Example input data
+input_data = {
+    'Physics': ['Arnold', 'Ingrid', 'Fred', 'Bill', 'Jack'],
+    'Mathematics': ['Eleanor', 'Arnold', 'Herb'],
+    'English': ['Arnold', 'David'],
+    'Geology': ['Carol', 'Bill', 'Fred', 'Herb'],
+    'Business': ['George', 'Eleanor', 'Carol'],
+    'Statistics': ['David', 'Ingrid', 'George'],
+    'Economics': ['Ingrid', 'Jack']
+}
 
 # Get the schedule
 graph_instance = Graph()
-for class_name, students in user_input_data.items():
+for class_name, students in input_data.items():
     graph_instance.add_class(class_name, students)
 
 result_schedule = graph_instance.color_classes()
 
 # Visualize the colored graph
-visualize_schedule(result_schedule, user_input_data)
+visualize_schedule(result_schedule, input_data)
+
+# print(result_schedule)
+
+# Printing the schedule and the ammount of periods required
+schedule_allocator = ScheduleAllocator(result_schedule)
+allocated_schedule = schedule_allocator.allocate_schedule()
+print(allocated_schedule)

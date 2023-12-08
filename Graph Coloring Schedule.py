@@ -81,7 +81,7 @@ def generate_schedule(coloring, start_node, distances, previous_nodes):
 
     for location, color in coloring.items():
         if location != start_node:
-            day = days_of_week[color - 1]  # Adjusting index to start from Monday
+            day = days_of_week[color]  # Adjusting index to start from Monday
             if day not in schedule:
                 schedule[day] = []
 

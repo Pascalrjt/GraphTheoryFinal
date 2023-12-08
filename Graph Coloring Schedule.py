@@ -107,21 +107,63 @@ def generate_schedule(coloring, start_node, distances, previous_nodes):
 
 
 
+# def main():
+#     # Example usage for a Global Supply Chain Optimization scenario with named locations
+#     supply_chain = Graph()
+
+#     # Define edges representing bidirectional transportation routes between locations with costs
+#     adjacency_list = {
+#         'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},
+#         'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},
+#         'WarehouseX': {'RetailStore1': 1},
+#         'WarehouseY': {'RetailStore2': 7},
+#         'DistributionCenter1': {'RetailStore1': 3},
+#         'DistributionCenter2': {'RetailStore2': 2},
+#         'RetailStore1': {},  # Add an empty dictionary for 'RetailStore1'
+#         'RetailStore2': {}   # Add an empty dictionary for 'RetailStore2'
+#     }
+
+#     # Initialize all locations in the graph
+#     for source, destinations in adjacency_list.items():
+#         supply_chain.graph.setdefault(source, {})
+
+#     # Add bidirectional edges to the graph
+#     for source, destinations in adjacency_list.items():
+#         for destination, cost in destinations.items():
+#             supply_chain.add_edge(source, destination, cost)
+
+#     # Example shortest paths from 'FactoryA' to other locations
+#     start_location = 'FactoryA'
+#     distances, previous_nodes = supply_chain.dijkstra(start_location)
+
+#     # Perform graph coloring using Welsh-Powell algorithm
+#     coloring = supply_chain.welsh_powell_coloring(distances, previous_nodes)
+
+#     # Print the schedule
+#     print("\nLocation\tColor\tShortest Path\t\tDistance")
+#     for location, color in coloring.items():
+#         print(f"{location}\t\t{color}\t\t\t\t\t\t")
+
+#     # Specify the start node for the schedule
+#     start_node = 'FactoryA'
+
+#     # Generate and print the schedule (excluding the start node)
+#     schedule = generate_schedule(coloring, start_node, distances, previous_nodes)
+#     print("\nSchedule:")
+#     for day, locations in schedule.items():
+#         print(f"{day}:")
+#         for location_info in locations:
+#             print(f"  {location_info['location']} (Color {location_info['color']}) - Shortest Path: {location_info['shortest_path']}, Distance: {location_info['distance']}")
+
+#     # Visualize the graph with colors
+#     visualize_graph(supply_chain.graph, coloring)
+
 def main():
     # Example usage for a Global Supply Chain Optimization scenario with named locations
     supply_chain = Graph()
 
-    # Define edges representing bidirectional transportation routes between locations with costs
-    adjacency_list = {
-        'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},
-        'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},
-        'WarehouseX': {'RetailStore1': 1},
-        'WarehouseY': {'RetailStore2': 7},
-        'DistributionCenter1': {'RetailStore1': 3},
-        'DistributionCenter2': {'RetailStore2': 2},
-        'RetailStore1': {},  # Add an empty dictionary for 'RetailStore1'
-        'RetailStore2': {}   # Add an empty dictionary for 'RetailStore2'
-    }
+    # Get adjacency list from user input
+    adjacency_list = eval(input("Enter adjacency list: "))
 
     # Initialize all locations in the graph
     for source, destinations in adjacency_list.items():
@@ -132,8 +174,8 @@ def main():
         for destination, cost in destinations.items():
             supply_chain.add_edge(source, destination, cost)
 
-    # Example shortest paths from 'FactoryA' to other locations
-    start_location = 'FactoryA'
+    # Get start location from user input
+    start_location = input("Enter start location: ")
     distances, previous_nodes = supply_chain.dijkstra(start_location)
 
     # Perform graph coloring using Welsh-Powell algorithm
@@ -145,7 +187,7 @@ def main():
         print(f"{location}\t\t{color}\t\t\t\t\t\t")
 
     # Specify the start node for the schedule
-    start_node = 'FactoryA'
+    start_node = start_location
 
     # Generate and print the schedule (excluding the start node)
     schedule = generate_schedule(coloring, start_node, distances, previous_nodes)
@@ -160,3 +202,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Sample input
+# {'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},'WarehouseX': {'RetailStore1': 1},'WarehouseY': {'RetailStore2': 7},'DistributionCenter1': {'RetailStore1': 3},'DistributionCenter2': {'RetailStore2': 2},'RetailStore1': {},'RetailStore2': {}}
+# FactoryA

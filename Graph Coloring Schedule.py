@@ -1,100 +1,162 @@
+import heapq
 import networkx as nx
 import matplotlib.pyplot as plt
-import datetime
 
 class Graph:
     def __init__(self):
         self.graph = {}
 
-    def add_class(self, class_name, students):
-        if class_name not in self.graph:
-            self.graph[class_name] = set(students)
-        else:
-            self.graph[class_name].update(students)
+    def add_edge(self, source, destination, cost):
+        if source not in self.graph:
+            self.graph[source] = {}
+        if destination not in self.graph:
+            self.graph[destination] = {}
 
-    def color_classes(self):
-        sorted_classes = sorted(self.graph.keys(), key=lambda x: len(self.graph[x]), reverse=True)
-        color_map = {}
-        color = 1
+        self.graph[source][destination] = cost
+        self.graph[destination][source] = cost  # Add the reverse edge
 
-        for class_name in sorted_classes:
-            if class_name not in color_map:
-                color_map[class_name] = color
+    def dijkstra(self, start):
+        distances = {node: float('infinity') for node in self.graph}
+        distances[start] = 0
+        priority_queue = [(0, start)]
+        previous_nodes = {node: None for node in self.graph}
 
-                for adjacent_class in self.graph[class_name]:
-                    if adjacent_class not in color_map:
-                        color_map[adjacent_class] = color
+        while priority_queue:
+            current_distance, current_node = heapq.heappop(priority_queue)
 
-                color += 1
+            if current_distance > distances[current_node]:
+                continue
 
-        return color_map
+            for neighbor, weight in self.graph[current_node].items():
+                distance = current_distance + weight
+                if distance < distances[neighbor]:
+                    distances[neighbor] = distance
+                    previous_nodes[neighbor] = current_node
+                    heapq.heappush(priority_queue, (distance, neighbor))
+
+        return distances, previous_nodes
+
+    def welsh_powell_coloring(self, distances, previous_nodes):
+        sorted_vertices = sorted(self.graph.keys(), key=lambda x: distances[x], reverse=True)
+        colors = {}
+        current_color = 0
+
+        for vertex in sorted_vertices:
+            if vertex not in colors:
+                colors[vertex] = current_color
+                current_color += 1
+
+                # Assign the same color to nodes in the shortest path
+                current_node = vertex
+                while previous_nodes[current_node] is not None:
+                    previous_node = previous_nodes[current_node]
+                    colors[previous_node] = colors[vertex]
+                    current_node = previous_node
+
+        return colors
 
 
-def visualize_schedule(schedule, input_data):
+def visualize_graph(graph, coloring):
     G = nx.Graph()
 
-    for class_name, color in schedule.items():
-        G.add_node(class_name, color=color)
-        print(f"{class_name}: Color {color}")
-
-    for class_name, students in input_data.items():
-        for student in students:
-            for other_class in input_data:
-                if other_class != class_name and student in input_data[other_class]:
-                    G.add_edge(class_name, other_class)
-
-    node_colors = [schedule[class_name] for class_name in G.nodes]
+    for source, destinations in graph.items():
+        for destination, cost in destinations.items():
+            G.add_edge(source, destination, weight=cost)
 
     pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color=node_colors, cmap=plt.cm.rainbow)
+
+    unique_colors = list(set(coloring.values()))
+    color_mapping = {color: f'C{i}' for i, color in enumerate(unique_colors)}
+
+    nx.draw(G, pos, with_labels=True, node_size=700, node_color=[color_mapping[coloring[node]] for node in G.nodes], font_size=8, font_color="black", font_weight="bold", edge_color="gray", linewidths=1, alpha=0.7)
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
+
     plt.show()
 
-class ScheduleAllocator:
-    def __init__(self, schedule, class_duration=3, start_time=datetime.time(11, 0), end_time=datetime.time(16, 0)):
-        self.schedule = schedule
-        self.class_duration = class_duration
-        self.start_time = start_time
-        self.end_time = end_time
-        self.num_periods = 0  # Add a new attribute to store the number of periods
 
-    def allocate_schedule(self):
-        allocated_schedule = {}
-        current_time = datetime.datetime.combine(datetime.date.today(), self.start_time)
+def generate_schedule(coloring, start_node, distances, previous_nodes):
+    schedule = {}
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
-        for class_name, color in self.schedule.items():
-            allocated_schedule[class_name] = current_time.strftime("%I:%M %p")
-            current_time += datetime.timedelta(hours=self.class_duration)
-            if current_time.time() > self.end_time:
-                current_time = datetime.datetime.combine(datetime.date.today(), self.start_time)
-                self.num_periods += 1  # Increment the number of periods
+    for location, color in coloring.items():
+        if location != start_node:
+            day = days_of_week[color - 1]  # Adjusting index to start from Monday
+            if day not in schedule:
+                schedule[day] = []
 
-        return allocated_schedule, self.num_periods  # Return the allocated schedule and the number of periods
+            # Use the shortest paths information
+            shortest_path_to_location = []
+            current_node = location
+            while previous_nodes[current_node] is not None:
+                shortest_path_to_location.insert(0, current_node)
+                current_node = previous_nodes[current_node]
+
+            schedule[day].append({
+                'location': location,
+                'color': color,
+                'shortest_path': shortest_path_to_location,
+                'distance': distances[location]
+            })
+
+    # Reverse the order of locations within each day
+    for day, locations in schedule.items():
+        schedule[day] = list(reversed(locations))
+
+    return schedule
 
 
-# Example input data
-input_data = {
-    'Physics': ['Arnold', 'Ingrid', 'Fred', 'Bill', 'Jack'],
-    'Mathematics': ['Eleanor', 'Arnold', 'Herb'],
-    'English': ['Arnold', 'David'],
-    'Geology': ['Carol', 'Bill', 'Fred', 'Herb'],
-    'Business': ['George', 'Eleanor', 'Carol'],
-    'Statistics': ['David', 'Ingrid', 'George'],
-    'Economics': ['Ingrid', 'Jack']
-}
 
-# Get the schedule
-graph_instance = Graph()
-for class_name, students in input_data.items():
-    graph_instance.add_class(class_name, students)
+def main():
+    # Example usage for a Global Supply Chain Optimization scenario with named locations
+    supply_chain = Graph()
 
-result_schedule = graph_instance.color_classes()
+    # Define edges representing bidirectional transportation routes between locations with costs
+    adjacency_list = {
+        'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},
+        'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},
+        'WarehouseX': {'RetailStore1': 1},
+        'WarehouseY': {'RetailStore2': 7},
+        'DistributionCenter1': {'RetailStore1': 3},
+        'DistributionCenter2': {'RetailStore2': 2},
+        'RetailStore1': {},  # Add an empty dictionary for 'RetailStore1'
+        'RetailStore2': {}   # Add an empty dictionary for 'RetailStore2'
+    }
 
-# Visualize the colored graph
-visualize_schedule(result_schedule, input_data)
+    # Initialize all locations in the graph
+    for source, destinations in adjacency_list.items():
+        supply_chain.graph.setdefault(source, {})
 
-# print(result_schedule)
+    # Add bidirectional edges to the graph
+    for source, destinations in adjacency_list.items():
+        for destination, cost in destinations.items():
+            supply_chain.add_edge(source, destination, cost)
 
-# Printing the schedule and the ammount of periods required
-schedule_allocator = ScheduleAllocator(result_schedule)
-allocated_schedule = schedule_allocator.allocate_schedule()
-print(allocated_schedule)
+    # Example shortest paths from 'FactoryA' to other locations
+    start_location = 'FactoryA'
+    distances, previous_nodes = supply_chain.dijkstra(start_location)
+
+    # Perform graph coloring using Welsh-Powell algorithm
+    coloring = supply_chain.welsh_powell_coloring(distances, previous_nodes)
+
+    # Print the schedule
+    print("\nLocation\tColor\tShortest Path\t\tDistance")
+    for location, color in coloring.items():
+        print(f"{location}\t\t{color}\t\t\t\t\t\t")
+
+    # Specify the start node for the schedule
+    start_node = 'FactoryA'
+
+    # Generate and print the schedule (excluding the start node)
+    schedule = generate_schedule(coloring, start_node, distances, previous_nodes)
+    print("\nSchedule:")
+    for day, locations in schedule.items():
+        print(f"{day}:")
+        for location_info in locations:
+            print(f"  {location_info['location']} (Color {location_info['color']}) - Shortest Path: {location_info['shortest_path']}, Distance: {location_info['distance']}")
+
+    # Visualize the graph with colors
+    visualize_graph(supply_chain.graph, coloring)
+
+if __name__ == "__main__":
+    main()

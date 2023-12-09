@@ -105,59 +105,6 @@ def generate_schedule(coloring, start_node, distances, previous_nodes):
 
     return schedule
 
-
-
-# def main():
-#     # Example usage for a Global Supply Chain Optimization scenario with named locations
-#     supply_chain = Graph()
-
-#     # Define edges representing bidirectional transportation routes between locations with costs
-#     adjacency_list = {
-#         'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},
-#         'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},
-#         'WarehouseX': {'RetailStore1': 1},
-#         'WarehouseY': {'RetailStore2': 7},
-#         'DistributionCenter1': {'RetailStore1': 3},
-#         'DistributionCenter2': {'RetailStore2': 2},
-#         'RetailStore1': {},  # Add an empty dictionary for 'RetailStore1'
-#         'RetailStore2': {}   # Add an empty dictionary for 'RetailStore2'
-#     }
-
-#     # Initialize all locations in the graph
-#     for source, destinations in adjacency_list.items():
-#         supply_chain.graph.setdefault(source, {})
-
-#     # Add bidirectional edges to the graph
-#     for source, destinations in adjacency_list.items():
-#         for destination, cost in destinations.items():
-#             supply_chain.add_edge(source, destination, cost)
-
-#     # Example shortest paths from 'FactoryA' to other locations
-#     start_location = 'FactoryA'
-#     distances, previous_nodes = supply_chain.dijkstra(start_location)
-
-#     # Perform graph coloring using Welsh-Powell algorithm
-#     coloring = supply_chain.welsh_powell_coloring(distances, previous_nodes)
-
-#     # Print the schedule
-#     print("\nLocation\tColor\tShortest Path\t\tDistance")
-#     for location, color in coloring.items():
-#         print(f"{location}\t\t{color}\t\t\t\t\t\t")
-
-#     # Specify the start node for the schedule
-#     start_node = 'FactoryA'
-
-#     # Generate and print the schedule (excluding the start node)
-#     schedule = generate_schedule(coloring, start_node, distances, previous_nodes)
-#     print("\nSchedule:")
-#     for day, locations in schedule.items():
-#         print(f"{day}:")
-#         for location_info in locations:
-#             print(f"  {location_info['location']} (Color {location_info['color']}) - Shortest Path: {location_info['shortest_path']}, Distance: {location_info['distance']}")
-
-#     # Visualize the graph with colors
-#     visualize_graph(supply_chain.graph, coloring)
-
 def main():
     # Example usage for a Global Supply Chain Optimization scenario with named locations
     supply_chain = Graph()
@@ -189,19 +136,32 @@ def main():
     # Specify the start node for the schedule
     start_node = start_location
 
+    # Print the shortest routes to all nodes from the start_node
+    print("\nShortest Routes from", start_node)
+    for destination, distance in distances.items():
+        if destination != start_node:
+            path = []
+            current_node = destination
+            while previous_nodes[current_node] is not None:
+                path.insert(0, current_node)
+                current_node = previous_nodes[current_node]
+            path.insert(0, start_node)
+            print(f"To {destination}: {path} (Distance: {distance}km)")
+
     # Generate and print the schedule (excluding the start node)
     schedule = generate_schedule(coloring, start_node, distances, previous_nodes)
     print("\nSchedule:")
     for day, locations in schedule.items():
         print(f"{day}:")
         for location_info in locations:
-            print(f"  {location_info['location']} (Color {location_info['color']}) - Shortest Path: {location_info['shortest_path']}, Distance: {location_info['distance']}")
+            print(f"  {location_info['location']} (Color {location_info['color']}) - Route: {location_info['shortest_path']}, Distance: {location_info['distance']}km")
 
     # Visualize the graph with colors
     visualize_graph(supply_chain.graph, coloring)
 
 if __name__ == "__main__":
     main()
+
 
 # Sample input
 # {'FactoryA': {'WarehouseX': 1, 'WarehouseY': 3, 'DistributionCenter1': 5},'FactoryB': {'DistributionCenter1': 2, 'DistributionCenter2': 4},'WarehouseX': {'RetailStore1': 1},'WarehouseY': {'RetailStore2': 7},'DistributionCenter1': {'RetailStore1': 3},'DistributionCenter2': {'RetailStore2': 2},'RetailStore1': {},'RetailStore2': {}}

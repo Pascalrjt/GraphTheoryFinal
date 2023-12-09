@@ -127,7 +127,7 @@ def on_run_button_click(adjacency_entry, start_entry, output_text):
     coloring = supply_chain.welsh_powell_coloring(distances, previous_nodes)
 
     # Prepare the output text
-    output_text.set("\nLocation\tColor\tShortest Path\t\tDistance\n")
+    output_text.set("\nLocation\t\tColor\n")
     for location, color in coloring.items():
         output_text.set(output_text.get() + f"{location}\t\t{color}\t\t\t\t\t\t\n")
 
